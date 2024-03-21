@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}"> 
+    <title>Webcam Image Capture</title>
+</head>
+<body>
+    <div id="container">
+        <div id="header">
+            <h1>Webcam Image Capture</h1>
+        </div>
+        <div id="content">
+            <img id="image-preview" src="" alt="Captured Image">
+            <div id="controls">
+                <video id="video-preview" width="640" height="480" autoplay></video>
+                <button id="capture-button" disabled>Capture Last Frame</button>
+            </div>
+        </div>
+        <div id="footer">
+            <p>ANNs Winter Semester 2023/2024</p>
+        </div>
+    </div>
+
+    
+    
+    <script>
+        // Get video element
+        const videoPreview = document.getElementById('video-preview');
+        
+        // Get capture button
+        const captureButton = document.getElementById('capture-button');
+        
+        // Variables to hold media stream and image capture capabilities
+        let mediaStream;
+        let imageCapture;
+        
+        // Function to initialize media stream and image capture
+        async function initializeMediaStreamAndImageCapture() {
+        try {
+        // Get media stream
+        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        
+        // Display media stream in video element
+        videoPreview.srcObject = mediaStream;
+        
+        // Get image capture capabilities from media stream
+        const track = mediaStream.getVideoTracks()[0];
+        imageCapture = new ImageCapture(track);
+        
+        // Enable capture button
+        captureButton.disabled = false;
+        } catch (error) {
+        console.error('Error accessing webcam:', error);
+        alert('Error accessing webcam. Please ensure it is not blocked by your browser.');
+        }
+        }
+        
+        // Function to capture a picture
+        async function capturePicture() {
+        try {
+        // Stop video stream
+        mediaStream.getVideoTracks()[0].stop();
+        
+        // Capture picture
+        const blob = await imageCapture.takePhoto();
+        
+        // Display captured picture
+        const imageURL = URL.createObjectURL(blob);
+        const img = new Image();
+        img.src = imageURL;
+        document.body.appendChild(img);
+        
+        // Remove video preview element
+        videoPreview.remove();
+        } catch (error) {
+        console.error('Error capturing picture:', error);
+        alert('Error capturing picture. Please try again.');
+        }
+        }
+        
+        // Event listener for capture button
+        captureButton.addEventListener('click', capturePicture);
+        
+        // Initialize media stream and image capture when the script is executed
+        initializeMediaStreamAndImageCapture();
+        </script>
+</body>
+</html>

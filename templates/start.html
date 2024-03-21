@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}"> 
+    <title>Traffic Signs Detection</title>
+</head>
+<body>
+    <div id="container">
+        <div id="header">
+            <h1>Traffic Signs Recognition</h1>
+        </div>
+        <div id="content">
+            <p>Upload an image/video or use your webcam to detect traffic signs.</p>
+            <!-- Use a hidden input element to trigger file selection -->
+            <input type="file" id="file-selector" accept="image/*, video/*" style="display: none;">
+            <!-- Button to trigger file selection -->
+            <button id="upload-button">Upload an Image or a video</button>
+            <!-- Button to open webcam in a new tab -->
+            <button id="webcam-button">Use Webcam</button>
+        </div>
+        <div id="footer">
+            <p>ANNs Winter Semester 2023/2024</p>
+        </div>
+    </div>
+
+    <script>
+        // Function to trigger file selection when the button is clicked
+        document.getElementById('upload-button').addEventListener('click', function() {
+            document.getElementById('file-selector').click();
+        });
+
+        // Function to open webcam in a new tab when the button is clicked
+        document.getElementById('webcam-button').addEventListener('click', function() {
+            window.open('/webcam.html', '_blank');
+        });
+    </script>
+</body>
+</html>
