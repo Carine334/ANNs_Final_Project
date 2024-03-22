@@ -10,7 +10,7 @@
             <h1>Webcam Image Capture</h1>
         </div>
         <div id="content">
-            <img id="image-preview" src="" alt="Captured Image">
+            <canvas id="image-preview" width="640" height="480"></canvas>
             <div id="controls">
                 <video id="video-preview" width="640" height="480" autoplay></video>
                 <button id="capture-button" disabled>Capture Last Frame</button>
@@ -36,46 +36,62 @@
         
         // Function to initialize media stream and image capture
         async function initializeMediaStreamAndImageCapture() {
-        try {
-        // Get media stream
-        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        
-        // Display media stream in video element
-        videoPreview.srcObject = mediaStream;
-        
-        // Get image capture capabilities from media stream
-        const track = mediaStream.getVideoTracks()[0];
-        imageCapture = new ImageCapture(track);
-        
-        // Enable capture button
-        captureButton.disabled = false;
-        } catch (error) {
-        console.error('Error accessing webcam:', error);
-        alert('Error accessing webcam. Please ensure it is not blocked by your browser.');
-        }
+            try {
+                // Get media stream
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                
+                // Display media stream in video element
+                videoPreview.srcObject = mediaStream;
+                
+                // Get image capture capabilities from media stream
+                const track = mediaStream.getVideoTracks()[0];
+                imageCapture = new ImageCapture(track);
+                
+                // Enable capture button
+                captureButton.disabled = false;
+            } catch (error) {
+                console.error('Error accessing webcam:', error);
+                alert('Error accessing webcam. Please ensure it is not blocked by your browser.');
+            }
         }
         
         // Function to capture a picture
         async function capturePicture() {
-        try {
-        // Stop video stream
-        mediaStream.getVideoTracks()[0].stop();
-        
-        // Capture picture
-        const blob = await imageCapture.takePhoto();
-        
-        // Display captured picture
-        const imageURL = URL.createObjectURL(blob);
-        const img = new Image();
-        img.src = imageURL;
-        document.body.appendChild(img);
-        
-        // Remove video preview element
-        videoPreview.remove();
-        } catch (error) {
-        console.error('Error capturing picture:', error);
-        alert('Error capturing picture. Please try again.');
+            try {
+                // Capture picture
+                const blob = await imageCapture.takePhoto();
+                
+                // Display captured picture
+                const canvas = document.getElementById('image-preview');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    predictTrafficSign(img);
+                }
+                img.src = URL.createObjectURL(blob);
+                
+                // Stop video stream
+                mediaStream.getVideoTracks()[0].stop();
+                
+                // Remove video preview element
+                videoPreview.remove();
+                
+                // Disable capture button
+                captureButton.disabled = true;
+            } catch (error) {
+                console.error('Error capturing picture:', error);
+                alert('Error capturing picture. Please try again.');
+            }
         }
+        
+        // Function to predict if the image is a traffic sign
+        async function predictTrafficSign(image) {
+            // Here, you'll need to implement loading your pre-trained model and preprocessing the image.
+            // Once you have the model loaded and the image preprocessed, you can make predictions.
+            // After making predictions, you can compute Grad-CAM to visualize the areas of the image that are important for the model's prediction.
+            // I'll provide a placeholder function for now.
+            console.log('Placeholder function for predicting if the image is a traffic sign.');
         }
         
         // Event listener for capture button
@@ -83,6 +99,6 @@
         
         // Initialize media stream and image capture when the script is executed
         initializeMediaStreamAndImageCapture();
-        </script>
+    </script>
 </body>
 </html>
