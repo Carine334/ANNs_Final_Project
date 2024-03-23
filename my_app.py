@@ -77,14 +77,22 @@ def preprocess_images(img):
 def predict_result(image):
     pred = model.predict(image)
     predicted_label = np.argmax(pred[0], axis=-1)
-    predicted_class_name = classes[predicted_label]
-    return predicted_class_name
+    confidence = pred[0][predicted_label]
+    if confidence < threshold:
+        predicted_class_name = "No known traffic sign"
+        confidence = 1 - confidence
+    else:
+        predicted_class_name = classes[predicted_label]
+    return predicted_class_name, confidence
+
+# Setting a confidence threshold
+threshold = 0.95
 
 # Example usage:
-#image_data = cv2.imread('image.png')
-#preprocessed_image = preprocess_images(image_data)
-#prediction = predict_result(np.expand_dims(preprocessed_image, axis=0))
-#print("the prediction is: ", prediction)
+image_data = cv2.imread('photo_5442879035244927474_y.jpg')
+preprocessed_image = preprocess_images(image_data)
+prediction = predict_result(np.expand_dims(preprocessed_image, axis=0))
+print("the prediction is: ", prediction[0] + " with a confidence of ", prediction[1])
 
 
 
