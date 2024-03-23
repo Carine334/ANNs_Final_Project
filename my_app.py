@@ -1,8 +1,10 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
 from skimage import color, exposure, transform
+from fileinput import filename 
+import os 
 
 
 app = Flask(__name__, static_url_path='/static')
@@ -79,7 +81,7 @@ def predict_result(image):
     predicted_label = np.argmax(pred[0], axis=-1)
     confidence = pred[0][predicted_label]
     if confidence < threshold:
-        predicted_class_name = "No known traffic sign"
+        predicted_class_name = "Not known traffic sign"
         confidence = 1 - confidence
     else:
         predicted_class_name = classes[predicted_label]
@@ -89,10 +91,10 @@ def predict_result(image):
 threshold = 0.95
 
 # Example usage:
-image_data = cv2.imread('photo_5442879035244927474_y.jpg')
-preprocessed_image = preprocess_images(image_data)
-prediction = predict_result(np.expand_dims(preprocessed_image, axis=0))
-print("the prediction is: ", prediction[0] + " with a confidence of ", prediction[1])
+#image_data = cv2.imread('photo_5442879035244927474_y.jpg')
+#preprocessed_image = preprocess_images(image_data)
+#prediction = predict_result(np.expand_dims(preprocessed_image, axis=0))
+#print("the prediction is: ", prediction[0] + " with a confidence of ", prediction[1])
 
 
 
@@ -110,27 +112,27 @@ def webcam():
 def upload():
     if 'file' not in request.files:
         return render_template("start.html", error="No file selected")
+    
+    if request.method == 'POST':
+        file = request.files['file']
+        if file.filename == '':
+            return render_template("start.html", error="No file selected")
 
-    file = request.files['file']
-    if file.filename == '':
-        return render_template("start.html", error="No file selected")
+        if file:
+            # Save the uploaded file to the upload folder
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(file_path)
 
-    if file:
-        # Save the uploaded file to the upload folder
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        file.save(file_path)
+            # Read the saved image
+            image = cv2.imread(file_path)
 
-        # Read the saved image
-        image = cv2.imread(file_path)
+            # Preprocess the image
+            preprocessed_image = preprocess_images(image)
 
-        # Preprocess the image
-        preprocessed_image = preprocess_images(image)
+            # Predict the result
+            prediction = predict_result(np.expand_dims(preprocessed_image, axis=0))
 
-        # Predict the result
-        prediction = predict_result(np.expand_dims(preprocessed_image, axis=0))
-
-        return render_template("predict.html", prediction=prediction)
-
+            return render_template("start.html", file=file, name_class=prediction[0], confidence_level = prediction[1])
 
 if __name__ == "__main__":
     app.run(debug=True)
