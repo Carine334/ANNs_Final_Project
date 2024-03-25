@@ -26,9 +26,6 @@
             <div id="prediction-result">
                  <!-- div for displaying prediction result -->
             </div>
-            <div id="heatmap">
-                <!-- div for displaying heatmap -->
-            </div>
         </div>
         <div id="footer">
             <p>ANNs Winter Semester 2023/2024</p>
@@ -61,14 +58,6 @@
                 } else {
                     const predictionResultDiv = document.getElementById('prediction-result');
                     predictionResultDiv.innerHTML = `<h3>This image refers to a ${data.name_class} sign with a confidence of ${data.confidence_level}</h3>`;
-                    
-                    // Display Grad-CAM heatmap
-                    const heatmapDiv = document.getElementById('heatmap');
-                    if (data.grad_cam) {
-                        heatmapDiv.innerHTML = `<img src="data:image/jpeg;base64,${data.grad_cam}" alt="Grad-CAM Heatmap">`;
-                    } else {
-                        heatmapDiv.innerHTML = "<p>No Grad-CAM heatmap available.</p>";
-                    }
                 }
             })
             .catch(error => console.error('Error fetching prediction:', error));
