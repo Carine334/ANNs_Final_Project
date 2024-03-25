@@ -17,9 +17,6 @@
             <div id="prediction-result">
                 <!-- Prediction result will be displayed here -->
             </div>
-            <div id="grad-cam">
-                <!-- Grad-CAM visualization will be displayed here -->
-            </div>
         </div>
         <div id="footer">
             <p>ANNs Winter Semester 2023/2024</p>
@@ -107,15 +104,6 @@
                 // Display prediction result
                 const predictionResult = document.getElementById('prediction-result');
                 predictionResult.innerHTML = `<h3>This image refers to a ${result.name_class} sign with a confidence of ${result.confidence_level}</h3>`;
-                
-                // Display Grad-CAM visualization if available
-                if (result.grad_cam) {
-                    const gradCamDiv = document.getElementById('grad-cam');
-                    const gradCamImg = new Image();
-                    gradCamImg.src = 'data:image/jpeg;base64,' + result.grad_cam;
-                    gradCamDiv.innerHTML = '';
-                    gradCamDiv.appendChild(gradCamImg);
-                }
             } catch (error) {
                 console.error('Error sending image to server:', error);
                 alert('Error sending image to server. Please try again.');
