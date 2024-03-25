@@ -11,16 +11,18 @@
         </div>
         <div id="content">
             <p>Upload an image/video or use your webcam to detect traffic signs.</p>
-            <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+            <form id="upload-form" enctype="multipart/form-data">
                 <!-- Add an input element with type file and id, but hide it -->
                 <input type="file" id="file-selector" name="file" style="display: none;" accept="image/*, video/*">
                 <!-- Use a button to trigger file selection -->
-                <button id="upload-button" type="button">Upload an Image or a video</button>
-                <!-- Added a submit button -->
-                <input type="submit" style="display: none;">
+                <button id="upload-button" type="button">Upload an image or a video</button>
             </form>
             <!-- Button to open webcam in a new tab -->
             <button id="webcam-button">Use Webcam</button>
+            <!-- Container for uploaded image -->
+            <div id="image-container">
+                <img id="uploaded-image" style="display: none;">
+            </div>
             <p>{{ error }}</p>
             <!-- Added div for displaying prediction result -->
             <div id="prediction-result">
@@ -40,27 +42,38 @@
     
         // Submit the form when a file is selected
         document.getElementById('file-selector').addEventListener('change', function() {
-            document.getElementById('upload-form').submit();
+            const formData = new FormData(); // Create FormData object
+            formData.append('file', this.files[0]); // Append file to FormData object
+            
+            // Display the uploaded image
+            const uploadedImage = document.getElementById('uploaded-image');
+            uploadedImage.style.display = 'block'; // Show the image
+            uploadedImage.src = URL.createObjectURL(this.files[0]); // Set image source
+            
+            // Fetch and display prediction result
+            fetch('/upload', { method: 'POST', body: formData }) // Send FormData object with POST request
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        // Handle error if necessary
+                    } else {
+                        // Extract the text content from JSON response
+                        const nameClass = data.name_class;
+                        const confidenceLevel = data.confidence_level;
+                        // Construct the text to be displayed
+                        const predictionText = `This image refers to a ${nameClass} sign with a confidence of ${confidenceLevel}`;
+                        // Set the inner text of the prediction result div to the constructed text
+                        const predictionResultDiv = document.getElementById('prediction-result');
+                        predictionResultDiv.innerText = predictionText;
+                    }
+                })
+                .catch(error => console.error('Error fetching prediction:', error));
         });
     
         // Function to open webcam in a new tab when the button is clicked
         document.getElementById('webcam-button').addEventListener('click', function() {
             window.open('/webcam.html', '_blank');
         });
-    
-        // Fetch and display prediction result
-        fetch('/upload', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    //document.getElementById('error-message').innerText = data.error;
-                    
-                } else {
-                    const predictionResultDiv = document.getElementById('prediction-result');
-                    predictionResultDiv.innerHTML = `<h3>This image refers to a ${data.name_class} sign with a confidence of ${data.confidence_level}</h3>`;
-                }
-            })
-            .catch(error => console.error('Error fetching prediction:', error));
     </script>
 </body>
 </html>
