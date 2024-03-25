@@ -24,13 +24,10 @@
             <p>{{ error }}</p>
             <!-- Added div for displaying prediction result -->
             <div id="prediction-result">
-                {% if name_class %}
-                    <h3>This image refers to a {{ name_class }} sign with a confidence of {{ confidence_level }}</h3>
-                    <!-- Display the uploaded image -->
-                    <img src="{{ url_for('static', filename='uploads/' + file.filename) }}" alt="Uploaded Image" style="max-width: 500px; max-height: 500px;">
-                {% else %}
-                    <!-- No prediction available message -->
-                {% endif %}
+                 <!-- div for displaying prediction result -->
+            </div>
+            <div id="heatmap">
+                <!-- div for displaying heatmap -->
             </div>
         </div>
         <div id="footer">
@@ -39,20 +36,42 @@
     </div>
 
     <script>
-           // Function to trigger file selection when the button is clicked
-            document.getElementById('upload-button').addEventListener('click', function() {
-                document.getElementById('file-selector').click();
-            });
-
-            // Submit the form when a file is selected
-            document.getElementById('file-selector').addEventListener('change', function() {
-                document.getElementById('upload-form').submit();
-            });
-
+        // Function to trigger file selection when the button is clicked
+        document.getElementById('upload-button').addEventListener('click', function() {
+            document.getElementById('file-selector').click();
+        });
+    
+        // Submit the form when a file is selected
+        document.getElementById('file-selector').addEventListener('change', function() {
+            document.getElementById('upload-form').submit();
+        });
+    
         // Function to open webcam in a new tab when the button is clicked
         document.getElementById('webcam-button').addEventListener('click', function() {
             window.open('/webcam.html', '_blank');
         });
+    
+        // Fetch and display prediction result
+        fetch('/upload', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    //document.getElementById('error-message').innerText = data.error;
+                    
+                } else {
+                    const predictionResultDiv = document.getElementById('prediction-result');
+                    predictionResultDiv.innerHTML = `<h3>This image refers to a ${data.name_class} sign with a confidence of ${data.confidence_level}</h3>`;
+                    
+                    // Display Grad-CAM heatmap
+                    const heatmapDiv = document.getElementById('heatmap');
+                    if (data.grad_cam) {
+                        heatmapDiv.innerHTML = `<img src="data:image/jpeg;base64,${data.grad_cam}" alt="Grad-CAM Heatmap">`;
+                    } else {
+                        heatmapDiv.innerHTML = "<p>No Grad-CAM heatmap available.</p>";
+                    }
+                }
+            })
+            .catch(error => console.error('Error fetching prediction:', error));
     </script>
 </body>
 </html>
