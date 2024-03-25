@@ -2,6 +2,60 @@
 <html>
 <head>
     <title>Webcam Image Capture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+        }
+
+        #container {
+            width: 80%;
+            margin: 50px auto;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #header,
+        #footer {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #content {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #capture-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+
+        #capture-button:hover {
+            background-color: #0056b3;
+        }
+        
+        #video-preview {
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
     <div id="container">
@@ -9,11 +63,11 @@
             <h1>Webcam Image Capture</h1>
         </div>
         <div id="content">
-            <canvas id="image-preview" width="640" height="480"></canvas>
             <div id="controls">
-                <video id="video-preview" width="640" height="480" autoplay></video>
                 <button id="capture-button" disabled>Capture Last Frame</button>
             </div>
+            <video id="video-preview" width="640" height="480" autoplay></video>
+            <canvas id="image-preview" width="640" height="480"></canvas>
             <div id="prediction-result">
                 <!-- Prediction result will be displayed here -->
             </div>
