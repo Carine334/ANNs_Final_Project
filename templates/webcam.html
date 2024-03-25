@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}"> 
     <title>Webcam Image Capture</title>
 </head>
 <body>
@@ -15,13 +14,17 @@
                 <video id="video-preview" width="640" height="480" autoplay></video>
                 <button id="capture-button" disabled>Capture Last Frame</button>
             </div>
+            <div id="prediction-result">
+                <!-- Prediction result will be displayed here -->
+            </div>
+            <div id="grad-cam">
+                <!-- Grad-CAM visualization will be displayed here -->
+            </div>
         </div>
         <div id="footer">
             <p>ANNs Winter Semester 2023/2024</p>
         </div>
     </div>
-
-    
     
     <script>
         // Get video element
@@ -67,7 +70,7 @@
                 const img = new Image();
                 img.onload = function() {
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    predictTrafficSign(img);
+                    sendImage(blob);
                 }
                 img.src = URL.createObjectURL(blob);
                 
@@ -85,13 +88,38 @@
             }
         }
         
-        // Function to predict if the image is a traffic sign
-        async function predictTrafficSign(image) {
-            // Here, you'll need to implement loading your pre-trained model and preprocessing the image.
-            // Once you have the model loaded and the image preprocessed, you can make predictions.
-            // After making predictions, you can compute Grad-CAM to visualize the areas of the image that are important for the model's prediction.
-            // I'll provide a placeholder function for now.
-            console.log('Placeholder function for predicting if the image is a traffic sign.');
+        // Function to send the captured image to the server for processing
+        async function sendImage(imageBlob) {
+            try {
+                // Create FormData object
+                const formData = new FormData();
+                formData.append('file', imageBlob, 'webcam_image.jpg');
+                
+                // Send POST request to the server
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                // Get prediction result from the response
+                const result = await response.json();
+                
+                // Display prediction result
+                const predictionResult = document.getElementById('prediction-result');
+                predictionResult.innerHTML = `<h3>This image refers to a ${result.name_class} sign with a confidence of ${result.confidence_level}</h3>`;
+                
+                // Display Grad-CAM visualization if available
+                if (result.grad_cam) {
+                    const gradCamDiv = document.getElementById('grad-cam');
+                    const gradCamImg = new Image();
+                    gradCamImg.src = 'data:image/jpeg;base64,' + result.grad_cam;
+                    gradCamDiv.innerHTML = '';
+                    gradCamDiv.appendChild(gradCamImg);
+                }
+            } catch (error) {
+                console.error('Error sending image to server:', error);
+                alert('Error sending image to server. Please try again.');
+            }
         }
         
         // Event listener for capture button
