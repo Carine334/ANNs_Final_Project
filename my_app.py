@@ -77,7 +77,7 @@ def predict_result(image):
     predicted_label = np.argmax(pred[0], axis=-1)
     confidence = pred[0][predicted_label]
     if confidence < threshold:
-        predicted_class_name = "Not known traffic"
+        predicted_class_name = "Not known traffic sign"
         confidence = 1 - confidence
     else:
         predicted_class_name = classes[predicted_label]
@@ -114,36 +114,6 @@ def upload():
     prediction, confidence = predict_result(np.expand_dims(preprocessed_image, axis=0))
 
     return jsonify(name_class=prediction, confidence_level = float(confidence))
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
-
-# Update the upload route to include Grad-CAM visualization in the response
-@app.route('/upload', methods=['POST'])
-def upload():
-    if 'file' not in request.files:
-        return jsonify(error="No file selected")
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify(error="No file selected")
-
-    # Save the uploaded file to the upload folder
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-    file.save(file_path)
-
-    # Read the saved image
-    image = cv2.imread(file_path)
-
-    # Preprocess the image
-    preprocessed_image = preprocess_images(image)
-
-    # Predict the result
-    prediction, confidence, grad_cam = predict_result(np.expand_dims(preprocessed_image, axis=0))
-
-    return jsonify(name_class=prediction, confidence_level=float(confidence))
-
 
 if __name__ == "__main__":
     app.run(debug=True)
