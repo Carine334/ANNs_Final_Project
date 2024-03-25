@@ -153,7 +153,7 @@ def upload():
     # Predict the result
     prediction, confidence, grad_cam = predict_result(np.expand_dims(preprocessed_image, axis=0))
 
-    return jsonify(name_class=prediction, confidence_level=float(confidence), grad_cam=grad_cam)
+    return jsonify(name_class=prediction, confidence_level=float(confidence))
 
 
 if __name__ == "__main__":
