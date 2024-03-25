@@ -39,10 +39,20 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin-right: 10px;
+    margin-right: 10px; /* Adjust this margin to add space between buttons */
+    margin-bottom: 10px; /* Add margin below buttons to separate them */
     transition: background-color 0.3s;
 }
+
 
 button:hover {
     background-color: #0056b3;
 }
+
+#image-container {
+    display: flex;
+    justify-content: center; /* Horizontally center the image */
+    align-items: center; /* Vertically center the image */
+    margin-bottom: 20px; /* Add some space below the image */
+}
+
