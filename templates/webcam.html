@@ -1,174 +1,131 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Webcam Image Capture</title>
+    <title>Webcam Feed</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f2f2f2;
+        #webcam-container {
+            position: relative;
         }
 
-        #container {
-            width: 80%;
-            margin: 50px auto;
-            background-color: #fff;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        #header,
-        #footer {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        #controls {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        #content {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        #capture-button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
+        #prediction-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 5px;
             border-radius: 5px;
-            cursor: pointer;
-            margin-right: 10px;
-            transition: background-color 0.3s;
         }
 
-        #capture-button:hover {
-            background-color: #0056b3;
+        #image-preview-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: 1px solid black;
+            border-radius: 5px;
+            overflow: hidden;
         }
-        
-        #video-preview {
-            margin-right: 10px;
+
+        #image-preview {
+            display: block;
+            width: 100%;
+            height: auto;
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <div id="header">
-            <h1>Webcam Image Capture</h1>
-        </div>
-        <div id="content">
-            <div id="controls">
-                <button id="capture-button" disabled>Capture Last Frame</button>
-            </div>
-            <video id="video-preview" width="640" height="480" autoplay></video>
-            <canvas id="image-preview" width="640" height="480"></canvas>
-            <div id="prediction-result">
-                <!-- Prediction result will be displayed here -->
-            </div>
-        </div>
-        <div id="footer">
-            <p>ANNs Winter Semester 2023/2024</p>
-        </div>
+    <h1>Live Traffic Sign Detection from Webcam</h1>
+    <div id="webcam-container">
+        <video id="webcam" width="640" height="480" autoplay></video>
+        <div id="prediction-overlay"></div>
     </div>
-    
+    <br>
+    <button id="start">Start Detection</button>
+    <button id="stop">Stop Detection</button>
+    <button id="capture">Capture Image</button>
+    <div id="image-preview-container">
+        <img id="image-preview" src="" width="100" alt="Captured Image">
+        <div id="heatmap-overlay"></div>
+    </div>
     <script>
-        // Get video element
-        const videoPreview = document.getElementById('video-preview');
-        
-        // Get capture button
-        const captureButton = document.getElementById('capture-button');
-        
-        // Variables to hold media stream and image capture capabilities
-        let mediaStream;
-        let imageCapture;
-        
-        // Function to initialize media stream and image capture
-        async function initializeMediaStreamAndImageCapture() {
-            try {
-                // Get media stream
-                mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                
-                // Display media stream in video element
-                videoPreview.srcObject = mediaStream;
-                
-                // Get image capture capabilities from media stream
-                const track = mediaStream.getVideoTracks()[0];
-                imageCapture = new ImageCapture(track);
-                
-                // Enable capture button
-                captureButton.disabled = false;
-            } catch (error) {
-                console.error('Error accessing webcam:', error);
-                alert('Error accessing webcam. Please ensure it is not blocked by your browser.');
+        var intervalId;
+        var videoStream;
+
+        $(document).ready(function() {
+            // Get webcam feed
+            navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                videoStream = stream;
+                var video = document.getElementById('webcam');
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(function(err) {
+                console.log("An error occurred: " + err);
+            });
+
+            // Function to start detection
+            function startDetection() {
+                intervalId = setInterval(function() {
+                    var video = document.getElementById('webcam');
+                    var canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    var context = canvas.getContext('2d');
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    var image_data = canvas.toDataURL('image/jpeg');
+                    // Send image data to server for prediction
+                    $.ajax({
+                        type: 'POST',
+                        url: '/predict_webcam',
+                        data: { image_data: image_data },
+                        success: function(data) {
+                            $('#prediction-overlay').html('<p>Prediction: ' + data.name_class + '<br>Confidence: ' + data.confidence_level + '</p>');
+                        }
+                    });
+                }, 1000); // Adjust the interval as needed (e.g., 1000 milliseconds = 1 second)
             }
-        }
-        
-        // Function to capture a picture
-        async function capturePicture() {
-            try {
-                // Capture picture
-                const blob = await imageCapture.takePhoto();
-                
-                // Display captured picture
-                const canvas = document.getElementById('image-preview');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
-                img.onload = function() {
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    sendImage(blob);
-                }
-                img.src = URL.createObjectURL(blob);
-                
-                // Stop video stream
-                mediaStream.getVideoTracks()[0].stop();
-                
-                // Remove video preview element
-                videoPreview.remove();
-                
-                // Disable capture button
-                captureButton.disabled = true;
-            } catch (error) {
-                console.error('Error capturing picture:', error);
-                alert('Error capturing picture. Please try again.');
-            }
-        }
-        
-        // Function to send the captured image to the server for processing
-        async function sendImage(imageBlob) {
-            try {
-                // Create FormData object
-                const formData = new FormData();
-                formData.append('file', imageBlob, 'webcam_image.jpg');
-                
-                // Send POST request to the server
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
+
+            // Start detection when the Start button is clicked
+            $('#start').click(function() {
+                console.log("Start button clicked");
+                startDetection();
+            });
+
+            // Stop detection when the Stop button is clicked
+            $('#stop').click(function() {
+                console.log("Stop button clicked");
+                clearInterval(intervalId);
+                $('#prediction-overlay').html('');
+            });
+
+            // Capture image when the Capture button is clicked
+            $('#capture').click(function() {
+                console.log("Capture button clicked");
+                var video = document.getElementById('webcam');
+                var canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                var context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                var image_data = canvas.toDataURL('image/jpeg');
+                // Stop webcam recording
+                videoStream.getTracks().forEach(function(track) {
+                    track.stop();
                 });
-                
-                // Get prediction result from the response
-                const result = await response.json();
-                
-                // Display prediction result
-                const predictionResult = document.getElementById('prediction-result');
-                predictionResult.innerHTML = `<h3>This image refers to a ${result.name_class} sign with a confidence of ${result.confidence_level}</h3>`;
-            } catch (error) {
-                console.error('Error sending image to server:', error);
-                alert('Error sending image to server. Please try again.');
-            }
-        }
-        
-        // Event listener for capture button
-        captureButton.addEventListener('click', capturePicture);
-        
-        // Initialize media stream and image capture when the script is executed
-        initializeMediaStreamAndImageCapture();
+                // Send captured image data to server for prediction
+                $.ajax({
+                    type: 'POST',
+                    url: '/predict_webcam',
+                    data: { image_data: image_data },
+                    success: function(data) {
+                        $('#image-preview').attr('src', data.uploaded_image);
+                        $('#heatmap-overlay').html('<img src="' + data.cam_path + '">');
+                        $('#heatmap-overlay').html('<p>Prediction: ' + data.name_class + '<br>Confidence: ' + data.confidence_level + '</p>');
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>
