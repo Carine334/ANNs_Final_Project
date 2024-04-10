@@ -19,15 +19,22 @@
             </form>
             <!-- Button to open webcam in a new tab -->
             <button id="webcam-button">Use Webcam</button>
-            <!-- Container for uploaded image -->
-            <div id="image-container">
-                <img id="uploaded-image" style="display: none;">
+            <!-- Container for uploaded image and heatmap -->
+            <div id="image-heatmap-container" style="width: 100%; height: auto;">
+                <div id="images-container" style="display: flex; justify-content: space-around;">
+                    <div id="image-container" style="max-width: 400px;">
+                        <!-- Display the uploaded image -->
+                        <img id="uploaded-image" style="display: none; width: 100%; height: auto;">
+                    </div>
+                    <!-- Display the superimposed image -->
+                    <div id="superimposed-image-container" style="max-width: 400px;">
+                        <!-- Superimposed image will be displayed here -->
+                    </div>
+                </div>
             </div>
-            <p>{{ error }}</p>
+            <p id="error-message" style="color: red;"></p>
             <!-- Added div for displaying prediction result -->
-            <div id="prediction-result">
-                 <!-- div for displaying prediction result -->
-            </div>
+            <div id="prediction-result"></div>
         </div>
         <div id="footer">
             <p>ANNs Winter Semester 2023/2024</p>
@@ -35,44 +42,71 @@
     </div>
 
     <script>
-        // Function to trigger file selection when the button is clicked
-        document.getElementById('upload-button').addEventListener('click', function() {
-            document.getElementById('file-selector').click();
-        });
-    
-        // Submit the form when a file is selected
+        // Add an event listener to the file selector change
         document.getElementById('file-selector').addEventListener('change', function() {
-            const formData = new FormData(); // Create FormData object
-            formData.append('file', this.files[0]); // Append file to FormData object
-            
-            // Display the uploaded image
-            const uploadedImage = document.getElementById('uploaded-image');
-            uploadedImage.style.display = 'block'; // Show the image
-            uploadedImage.src = URL.createObjectURL(this.files[0]); // Set image source
-            
-            // Fetch and display prediction result
-            fetch('/upload', { method: 'POST', body: formData }) // Send FormData object with POST request
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        // Handle error if necessary
-                    } else {
-                        // Extract the text content from JSON response
-                        const nameClass = data.name_class;
-                        const confidenceLevel = data.confidence_level;
-                        // Construct the text to be displayed
-                        const predictionText = `This image refers to a ${nameClass} sign with a confidence of ${confidenceLevel}`;
-                        // Set the inner text of the prediction result div to the constructed text
-                        const predictionResultDiv = document.getElementById('prediction-result');
-                        predictionResultDiv.innerText = predictionText;
-                    }
-                })
-                .catch(error => console.error('Error fetching prediction:', error));
+            // Get the selected file
+            const fileInput = this.files[0];
+
+            // Create a FormData object with the file
+            const formData = new FormData();
+            formData.append('file', fileInput);
+
+            // Send the FormData object to the server
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    // Handle error if necessary
+                    document.getElementById('error-message').innerText = data.error;
+                } else {
+                    // Extract the text content from JSON response
+                    const nameClass = data.name_class;
+                    const confidenceLevel = data.confidence_level;
+                    const camPath = data.cam_path;
+
+                    // Display the uploaded image
+                    const uploadedImage = document.getElementById('uploaded-image');
+                    uploadedImage.style.display = 'block';
+                    uploadedImage.src = 'data:image/jpeg;base64,' + data.uploaded_image;
+                    uploadedImage.style.width = '100%';
+                    uploadedImage.style.height = 'auto';
+
+                    // Display the superimposed image
+                    const superimposedImage = document.createElement('img');
+                    superimposedImage.src = camPath;
+                    superimposedImage.style.width = '100%';
+                    superimposedImage.style.height = 'auto';
+
+                    // Get the superimposed image container and append the superimposed image
+                    const superimposedImageContainer = document.getElementById('superimposed-image-container');
+                    superimposedImageContainer.innerHTML = '';
+                    superimposedImageContainer.appendChild(superimposedImage);
+
+                    // Set the inner text of the prediction result div
+                    const predictionResultDiv = document.getElementById('prediction-result');
+                    predictionResultDiv.innerHTML = `
+                        <p>This image refers to a ${nameClass} sign with a confidence of ${confidenceLevel}</p>
+                    `;
+
+                    // Print the prediction
+                    console.log('Prediction:', nameClass, 'Confidence:', confidenceLevel);
+                }
+            })
+            .catch(error => console.error('Error fetching prediction:', error));
         });
-    
+            
         // Function to open webcam in a new tab when the button is clicked
         document.getElementById('webcam-button').addEventListener('click', function() {
             window.open('/webcam.html', '_blank');
+        });
+            
+        // Add an event listener to the upload button click
+        document.getElementById('upload-button').addEventListener('click', function() {
+            // Trigger file selection when the upload button is clicked
+            document.getElementById('file-selector').click();
         });
     </script>
 </body>
