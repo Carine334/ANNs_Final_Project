@@ -1,14 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Prediction Result</title>
+
+    <title>Predictions</title>
+    <style>
+        .prediction {
+            border: 1px solid #dddddd;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+        .prediction img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
 </head>
 <body>
-    <h1>Prediction Result</h1>
-    {% if prediction %}
-        <h2>{{ prediction }}</h2>
-    {% else %}
-        <h2>No prediction available.</h2>
-    {% endif %}
+    <h2>Predictions</h2>
+    {% for prediction in predictions %}
+    <div class="prediction">
+        <p><strong>Prediction:</strong> {{ prediction['Prediction'] }}</p>
+        <p><strong>Confidence:</strong> {{ prediction['Confidence'] }}</p>
+        <img src="{{ prediction['cam_path'] }}" alt="Heatmap">
+    </div>
+    {% endfor %}
 </body>
 </html>
