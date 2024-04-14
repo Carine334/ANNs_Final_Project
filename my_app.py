@@ -15,7 +15,7 @@ import pandas as pd
 app = Flask(__name__, static_url_path='/static')
 
 # Load pre-trained model
-model = load_model('new_traffic_signs_model.keras')
+model = load_model('new_traffic_signs_model.h5')
 #print(model.summary())
 
 
