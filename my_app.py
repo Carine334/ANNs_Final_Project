@@ -9,11 +9,13 @@ from tensorflow import keras
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from PIL import Image
+import pandas as pd
+
 
 app = Flask(__name__, static_url_path='/static')
 
 # Load pre-trained model
-model = load_model('traffic_signs_model.h5')
+model = load_model('new_traffic_signs_model.keras')
 #print(model.summary())
 
 
@@ -23,7 +25,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Variables
 IMG_SIZE = 48
-threshold = 0.5
 
 # Label Overview
 classes = {0: 'Speed limit (20km/h)',
@@ -68,7 +69,8 @@ classes = {0: 'Speed limit (20km/h)',
            39: 'Keep left',
            40: 'Roundabout mandatory',
            41: 'End of no passing',
-           42: 'End no passing veh > 3.5 tons'}
+           42: 'End no passing veh > 3.5 tons',
+           43: 'Not a traffic sign'}
 
 
 def preprocess_images(img):
@@ -85,11 +87,7 @@ def predict_result(image):
     pred = model.predict(image)
     predicted_label = np.argmax(pred[0])
     confidence = pred[0][predicted_label]
-    if confidence < threshold:
-        predicted_class_name = "Not known traffic sign"
-        confidence = 1 - confidence
-    else:
-        predicted_class_name = classes[predicted_label]
+    predicted_class_name = classes[predicted_label]
     return predicted_class_name, confidence
 
 
@@ -153,7 +151,6 @@ def webcam():
     return render_template('webcam.html')
 
 
-
 @app.route('/upload', methods=['POST'])
 def upload():
     last_conv_layer_name = "conv2d_11"
@@ -169,24 +166,35 @@ def upload():
         # Read the video file
         video_stream = cv2.VideoCapture(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
         predictions = []
+
         while True:
             ret, frame = video_stream.read()
             if not ret:
                 break
+
             # Preprocess the frame
             preprocessed_frame = preprocess_images(frame)
             preprocessed_frame = np.expand_dims(preprocessed_frame, axis=0)  # Add batch dimension
+
             # Predict the result
             prediction, confidence = predict_result(preprocessed_frame)
+
             # Generate heatmap
             heatmap = make_gradcam_heatmap(preprocessed_frame, model, last_conv_layer_name)
-            # Encode heatmap image as base64 string
-            _, heatmap_buffer = cv2.imencode('.jpg', heatmap)
-            heatmap_base64 = base64.b64encode(heatmap_buffer).decode('utf-8')
-            predictions.append((prediction, confidence, heatmap_base64))
+
+            # Save and display Grad-CAM
+            cam_path = save_and_display_gradcam(frame, heatmap, cam_path="static/cam.jpg", alpha=0.4)
+
+            # Append prediction to predictions list
+            predictions.append((prediction, confidence, cam_path))
         # Release video stream
         video_stream.release()
-        return jsonify(predictions=predictions)
+
+        # Convert predictions to DataFrame for easier manipulation
+        df = pd.DataFrame(predictions, columns=['Prediction',  'Confidence', 'cam_path',])
+        print(df)
+        # Render predictions in a table
+        return render_template('predictions.html', predictions=df.to_html(index=False), prediction_result=prediction_result, superimposed_image_path=superimposed_image_path)
 
     else:
         # Handle image file
@@ -202,11 +210,13 @@ def upload():
             # Convert original image to base64 string
             _, img_buffer = cv2.imencode('.jpg', image)
             img_base64 = base64.b64encode(img_buffer).decode('utf-8')
-            return jsonify(name_class=prediction, confidence_level=float(confidence), cam_path=cam_path, uploaded_image=img_base64)
+            # Update superimposed_image_path with the path of the newly generated superimposed image
+            superimposed_image_path = cam_path
+
+            return jsonify(name_class=prediction, confidence_level=float(np.float32(confidence)), cam_path=cam_path, uploaded_image=img_base64)
 
     return jsonify(error="Invalid file format")
-
-
+    
 @app.route('/webcam_feed')
 def webcam_feed():
     return render_template('webcam.html')
@@ -238,11 +248,13 @@ def predict_webcam():
     # Return the prediction result
     return jsonify(name_class=prediction, confidence_level=float(confidence), cam_path=cam_path, uploaded_image=img_base64)
 
+print("TensorFlow version:", tf.__version__)
 
 
 if __name__ == "__main__":
 
     app.run(debug=True)
+
 
 
 
