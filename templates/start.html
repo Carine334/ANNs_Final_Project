@@ -10,12 +10,12 @@
             <h1>Traffic Signs Recognition</h1>
         </div>
         <div id="content">
-            <p>Upload an image/video or use your webcam to detect traffic signs.</p>
+            <p>Upload an image or use your webcam to detect traffic signs.</p>
             <form id="upload-form" enctype="multipart/form-data">
                 <!-- Add an input element with type file and id, but hide it -->
                 <input type="file" id="file-selector" name="file" style="display: none;" accept="image/*, video/*">
                 <!-- Use a button to trigger file selection -->
-                <button id="upload-button" type="button">Upload an image or a video</button>
+                <button id="upload-button" type="button">Upload an image</button>
             </form>
             <!-- Button to open webcam in a new tab -->
             <button id="webcam-button">Use Webcam</button>
@@ -44,6 +44,7 @@
     <script>
         // Add an event listener to the file selector change
         document.getElementById('file-selector').addEventListener('change', function() {
+            console.log('File selected');
             // Reset previous prediction and superimposed image
             document.getElementById('error-message').innerText = '';
             document.getElementById('prediction-result').innerText = '';
@@ -71,6 +72,9 @@
                     const nameClass = data.name_class;
                     const confidenceLevel = data.confidence_level;
                     const camPath = data.cam_path;
+                    // Generate a random identifier
+                    const randomId = Math.random().toString(36).substring(7);
+
 
                     // Display the uploaded image
                     const uploadedImage = document.getElementById('uploaded-image');
@@ -81,7 +85,8 @@
 
                     // Display the superimposed image
                     const superimposedImage = document.createElement('img');
-                    superimposedImage.src = camPath;
+                    // Update the src attribute with a random identifier
+                    superimposedImage.src = `${camPath}?id=${randomId}`;
                     superimposedImage.style.width = '100%';
                     superimposedImage.style.height = 'auto';
 
@@ -92,7 +97,7 @@
                     // Set the inner text of the prediction result div
                     const predictionResultDiv = document.getElementById('prediction-result');
                     predictionResultDiv.innerHTML = `
-                        <p>This image refers to a ${nameClass} sign with a confidence of ${confidenceLevel}</p>
+                        <p>This image refers to a ${nameClass} sign with a confidence of ${confidenceLevel}%.</p>
                     `;
 
                     // Print the prediction
