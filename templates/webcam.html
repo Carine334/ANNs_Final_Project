@@ -4,8 +4,20 @@
     <title>Webcam Feed</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        #webcam-container {
+        #container-wrapper {
+            display: flex;
+            justify-content: space-between; /* Distribute items along the main axis */
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #webcam-container,
+        #image-preview-container {
             position: relative;
+            width: calc(50% - 10px); /* Set width to 50% for each container with gap between them */
+            box-sizing: border-box;
         }
 
         #prediction-overlay {
@@ -18,9 +30,6 @@
         }
 
         #image-preview-container {
-            position: absolute;
-            top: 10px;
-            right: 10px;
             border: 1px solid black;
             border-radius: 5px;
             overflow: hidden;
@@ -31,22 +40,44 @@
             width: 100%;
             height: auto;
         }
+
+        h1 {
+            text-align: center; /* Center align the text */
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px; /* Adjust this margin to add space between buttons */
+            margin-bottom: 10px; /* Add margin below buttons to separate them */
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
     <h1>Live Traffic Sign Detection from Webcam</h1>
-    <div id="webcam-container">
-        <video id="webcam" width="640" height="480" autoplay></video>
-        <div id="prediction-overlay"></div>
+    <div id="container-wrapper">
+        <div id="webcam-container">
+            <video id="webcam" width="640" height="480" autoplay></video>
+            <div id="prediction-overlay"></div>
+        </div>
+        <div id="image-preview-container" style="display: none;"> <!-- Hide the image preview container initially -->
+            <img id="image-preview" src="" width="100", alt="captured image">
+            <div id="heatmap-overlay"></div>
+        </div>
     </div>
     <br>
     <button id="start">Start Detection</button>
     <button id="stop">Stop Detection</button>
     <button id="capture">Capture Image</button>
-    <div id="image-preview-container">
-        <img id="image-preview" src="" width="100" alt="Captured Image">
-        <div id="heatmap-overlay"></div>
-    </div>
     <script>
         var intervalId;
         var videoStream;
@@ -120,8 +151,9 @@
                     data: { image_data: image_data },
                     success: function(data) {
                         $('#image-preview').attr('src', data.uploaded_image);
+                        $('#image-preview-container').show(); // Show the image preview container
                         $('#heatmap-overlay').html('<img src="' + data.cam_path + '">');
-                        $('#heatmap-overlay').html('<p>Prediction: ' + data.name_class + '<br>Confidence: ' + data.confidence_level + '</p>');
+                        $('#prediction-overlay').html('<p>Prediction: ' + data.name_class + '<br>Confidence: ' + data.confidence_level + '</p>');
                     }
                 });
             });
