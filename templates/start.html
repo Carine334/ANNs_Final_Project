@@ -44,6 +44,11 @@
     <script>
         // Add an event listener to the file selector change
         document.getElementById('file-selector').addEventListener('change', function() {
+            // Reset previous prediction and superimposed image
+            document.getElementById('error-message').innerText = '';
+            document.getElementById('prediction-result').innerText = '';
+            document.getElementById('superimposed-image-container').innerHTML = '';
+
             // Get the selected file
             const fileInput = this.files[0];
 
@@ -82,7 +87,6 @@
 
                     // Get the superimposed image container and append the superimposed image
                     const superimposedImageContainer = document.getElementById('superimposed-image-container');
-                    superimposedImageContainer.innerHTML = '';
                     superimposedImageContainer.appendChild(superimposedImage);
 
                     // Set the inner text of the prediction result div
