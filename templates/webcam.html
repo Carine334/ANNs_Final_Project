@@ -70,7 +70,7 @@
             <div id="prediction-overlay"></div>
         </div>
         <div id="image-preview-container" style="display: none;"> <!-- Hide the image preview container initially -->
-            <img id="image-preview" src="" width="100", alt="captured image">
+            <img id="image-preview" src="" width="100" alt="captured image">
             <div id="heatmap-overlay"></div>
         </div>
     </div>
@@ -111,6 +111,7 @@
                         url: '/predict_webcam',
                         data: { image_data: image_data },
                         success: function(data) {
+                            
                             $('#prediction-overlay').html('<p>Prediction: ' + data.name_class + '<br>Confidence: ' + data.confidence_level + '</p>');
                         }
                     });
@@ -144,6 +145,19 @@
                 videoStream.getTracks().forEach(function(track) {
                     track.stop();
                 });
+                // Clear previous prediction overlays
+                $('#heatmap-overlay').empty();
+                $('#prediction-overlay').empty();
+                // Reset webcam feed
+                navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    videoStream = stream;
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function(err) {
+                    console.log("An error occurred: " + err);
+                });
                 // Send captured image data to server for prediction
                 $.ajax({
                     type: 'POST',
@@ -152,8 +166,12 @@
                     success: function(data) {
                         $('#image-preview').attr('src', data.uploaded_image);
                         $('#image-preview-container').show(); // Show the image preview container
-                        $('#heatmap-overlay').html('<img src="' + data.cam_path + '">');
+                        // Generate a timestamp for appending to the image URL
+                        var timestamp = new Date().getTime();
+                        $('#heatmap-overlay').html('<img src="' + data.cam_path + '?t=' + timestamp + '">');
                         $('#prediction-overlay').html('<p>Prediction: ' + data.name_class + '<br>Confidence: ' + data.confidence_level + '</p>');
+                        // Move prediction-overlay to the image preview container
+                        $('#prediction-overlay').appendTo($('#image-preview-container'));
                     }
                 });
             });
