@@ -86,7 +86,7 @@ def preprocess_images(img):
 def predict_result(image):
     pred = model.predict(image)
     predicted_label = np.argmax(pred[0])
-    confidence = pred[0][predicted_label]
+    confidence = pred[0][predicted_label] 
     predicted_class_name = classes[predicted_label]
     return predicted_class_name, confidence
 
@@ -161,59 +161,26 @@ def upload():
     if file.filename == '':
         return jsonify(error="No file selected")
 
-    # Check if the uploaded file is a video
-    if file.filename.endswith(('mp4', 'avi', 'mov')):
-        # Read the video file
-        video_stream = cv2.VideoCapture(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
-        predictions = []
+    # Handle image file
+    if file.filename.endswith(('png', 'jpg', 'jpeg')):
+        image = cv2.imdecode(np.fromstring(file.read(), np.uint8), cv2.IMREAD_COLOR)
+        preprocessed_image = preprocess_images(image)                    # Preprocess the image
+        preprocessed_image = np.expand_dims(preprocessed_image, axis=0)  # Add batch dimension
+        prediction, confidence = predict_result(preprocessed_image)
+        # Generate heatmap
+        heatmap = make_gradcam_heatmap(preprocessed_image, model, last_conv_layer_name)
+        # Superimpose heatmap on the original image and save it
+        cam_path = save_and_display_gradcam(image, heatmap, cam_path="static/cam.jpg", alpha=0.4)
+        # Convert original image to base64 string
+        _, img_buffer = cv2.imencode('.jpg', image)
+        img_base64 = base64.b64encode(img_buffer).decode('utf-8')
+        # Update superimposed_image_path with the path of the newly generated superimposed image
+        superimposed_image_path = cam_path
 
-        while True:
-            ret, frame = video_stream.read()
-            if not ret:
-                break
-
-            # Preprocess the frame
-            preprocessed_frame = preprocess_images(frame)
-            preprocessed_frame = np.expand_dims(preprocessed_frame, axis=0)  # Add batch dimension
-
-            # Predict the result
-            prediction, confidence = predict_result(preprocessed_frame)
-
-            # Generate heatmap
-            heatmap = make_gradcam_heatmap(preprocessed_frame, model, last_conv_layer_name)
-
-            # Save and display Grad-CAM
-            cam_path = save_and_display_gradcam(frame, heatmap, cam_path="static/cam.jpg", alpha=0.4)
-
-            # Append prediction to predictions list
-            predictions.append((prediction, confidence, cam_path))
-        # Release video stream
-        video_stream.release()
-
-        # Convert predictions to DataFrame for easier manipulation
-        df = pd.DataFrame(predictions, columns=['Prediction',  'Confidence', 'cam_path',])
-        print(df)
-        # Render predictions in a table
-        return render_template('predictions.html', predictions=df.to_html(index=False), prediction_result=prediction_result, superimposed_image_path=superimposed_image_path)
-
-    else:
-        # Handle image file
-        if file.filename.endswith(('png', 'jpg', 'jpeg')):
-            image = cv2.imdecode(np.fromstring(file.read(), np.uint8), cv2.IMREAD_COLOR)
-            preprocessed_image = preprocess_images(image)                    # Preprocess the image
-            preprocessed_image = np.expand_dims(preprocessed_image, axis=0)  # Add batch dimension
-            prediction, confidence = predict_result(preprocessed_image)
-            # Generate heatmap
-            heatmap = make_gradcam_heatmap(preprocessed_image, model, last_conv_layer_name)
-            # Superimpose heatmap on the original image and save it
-            cam_path = save_and_display_gradcam(image, heatmap, cam_path="static/cam.jpg", alpha=0.4)
-            # Convert original image to base64 string
-            _, img_buffer = cv2.imencode('.jpg', image)
-            img_base64 = base64.b64encode(img_buffer).decode('utf-8')
-            # Update superimposed_image_path with the path of the newly generated superimposed image
-            superimposed_image_path = cam_path
-
-            return jsonify(name_class=prediction, confidence_level=float(np.float32(confidence)), cam_path=cam_path, uploaded_image=img_base64)
+        return jsonify(name_class=prediction, confidence_level=float(np.float32(confidence))*100, cam_path=cam_path, uploaded_image=img_base64)
+        
+    else: 
+        return jsonify(error= "Invalid file format")
 
     return jsonify(error="Invalid file format")
     
@@ -246,7 +213,7 @@ def predict_webcam():
     _, img_buffer = cv2.imencode('.jpg', frame)
     img_base64 = base64.b64encode(img_buffer).decode('utf-8')
     # Return the prediction result
-    return jsonify(name_class=prediction, confidence_level=float(confidence), cam_path=cam_path, uploaded_image=img_base64)
+    return jsonify(name_class=prediction, confidence_level=float(confidence)*100, cam_path=cam_path, uploaded_image=img_base64)
 
 print("TensorFlow version:", tf.__version__)
 
@@ -256,9 +223,3 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 
-
-
-    return jsonify(name_class=prediction, confidence_level = float(confidence))
-
-if __name__ == "__main__":
-    app.run(debug=True)
