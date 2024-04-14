@@ -27,7 +27,7 @@ python my_app.py
 ```
 
 ## Usage
-- Upload a video file or use your webcam to capture real-time footage.
+- Upload a picture or use your webcam to capture real-time footage.
 - The app will detect and recognize traffic signs in the video feed.
 - View the predictions and confidence levels for each detected sign.
 
